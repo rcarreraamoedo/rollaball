@@ -7,14 +7,23 @@ using TMPro;
 
 public class PlayerController : MonoBehaviour
 {
-    public float speed = 0;
+    public float speed = 1;
     public TextMeshProUGUI countText;
     public GameObject winTextObject;
+    public GameObject looseTextObject;
+    public GameObject restartButton;
 
     private Rigidbody rb;
     private int count;
     private float movementX;
     private float movementY;
+    private Vector3 startPos;
+
+
+    void Main()
+    {
+        Screen.sleepTimeout = SleepTimeout.NeverSleep;
+    }
 
     // Start is called before the first frame update
     void Start()
@@ -24,9 +33,12 @@ public class PlayerController : MonoBehaviour
 
         SetCountText();
         winTextObject.SetActive(false);
+        looseTextObject.SetActive(false);
+        restartButton.SetActive(false);
+        startPos = this.transform.position;
     }
 
-    private void OnMove(InputValue movementValue)
+    void OnMove(InputValue movementValue)
     {
         Vector2 movementVector = movementValue.Get<Vector2>();
 
@@ -40,14 +52,23 @@ public class PlayerController : MonoBehaviour
         if (count >= 12) 
         {
             winTextObject.SetActive(true);
+            restartButton.SetActive(true);
         }
     }
 
-    private void FixedUpdate()
+    void FixedUpdate()
     {
-        Vector3 movement = new Vector3(movementX, 0.0f, movementY);
-
-        rb.AddForce(movement * speed);
+        if (SystemInfo.deviceType == DeviceType.Desktop)
+        {
+            Vector3 movement = new Vector3(movementX, 0.0f, movementY);
+            rb.AddForce(movement * speed);
+        }
+        else
+        {
+            Vector3 movement = new Vector3(Input.acceleration.x, 0.0f, Input.acceleration.y);
+            rb.AddForce(movement * speed);
+        }
+        
     }
 
     private void OnTriggerEnter(Collider other)
@@ -57,6 +78,18 @@ public class PlayerController : MonoBehaviour
             other.gameObject.SetActive(false);
             count = count + 1;
 
+            SetCountText();
+        }
+        if (other.gameObject.CompareTag("Enemy")){
+            this.transform.position=startPos;
+            count = count -1;
+            if (count<0){
+                looseTextObject.SetActive(true);
+                speed=0;
+                movementX=0;
+                movementY=0;
+                restartButton.SetActive(true);
+            }
             SetCountText();
         }
     }
